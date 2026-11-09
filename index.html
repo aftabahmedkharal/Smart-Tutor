@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Tutor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#10302f; --ink-2:#4a6361; --paper:#f2f6f4; --card:#ffffff; --line:#d8e3df;
+  --brand:#0f5c4d; --brand-2:#0b4639; --hl:#ffd75e; --ok:#1c8a55; --ok-bg:#e2f4ea;
+  --bad:#c23a3a; --bad-bg:#fbe7e7; --shadow:0 1px 2px rgba(16,48,47,.06),0 8px 24px rgba(16,48,47,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{--ink:#e6f0ed; --ink-2:#9db5b0; --paper:#0d1b1a; --card:#142624; --line:#254240;
+    --brand:#2fa88a; --brand-2:#3bb596; --hl:#6b5a10; --ok:#4cd08e; --ok-bg:#12382a;
+    --bad:#ff8a8a; --bad-bg:#3d1c1c; --shadow:none}
+}
+*{box-sizing:border-box;margin:0}
+html{min-height:100%;overflow-y:auto;scroll-behavior:smooth} body{font-family:Figtree,system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;min-height:100vh;overflow-x:hidden}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,sans-serif;letter-spacing:-.01em;line-height:1.2}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:8px}
+
+.top{max-width:1120px;margin:auto;padding:22px 20px 8px;display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:11px;background:var(--brand);display:grid;place-items:center;color:#fff}
+.top h1{font-size:22px}
+.top p{color:var(--ink-2);font-size:14px}
+
+.wrap{max-width:1120px;margin:auto;padding:12px 20px 40px;display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.desk{padding:20px;position:sticky;top:16px}
+@media(max-width:860px){.desk{position:static}}
+.desk h2{font-size:18px;margin-bottom:4px}
+.desk .sub{color:var(--ink-2);font-size:14px;margin-bottom:16px}
+
+.drop{display:block;border:2px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;cursor:pointer;transition:.15s;position:relative}
+.drop:hover,.drop.over{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,transparent)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop:focus-within{outline:3px solid var(--brand);outline-offset:2px}
+.drop svg{color:var(--brand);margin-bottom:6px}
+.drop b{display:block;font-weight:600}
+.drop small{color:var(--ink-2)}
+.preview{display:none;position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.preview img{display:block;width:100%;max-height:220px;object-fit:cover}
+.preview button{position:absolute;top:8px;right:8px;border:0;border-radius:999px;background:rgba(0,0,0,.65);color:#fff;padding:5px 12px;font-size:13px;cursor:pointer}
+
+.or{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:13px;margin:14px 0}
+.or::before,.or::after{content:"";height:1px;background:var(--line);flex:1}
+
+label.f{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+.field{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.field:focus{outline:3px solid color-mix(in srgb,var(--brand) 35%,transparent);border-color:var(--brand)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;padding:8px;border-radius:8px;cursor:pointer;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--brand);color:#fff}
+
+.go{margin-top:20px;width:100%;border:0;border-radius:12px;background:var(--brand);color:#fff;padding:13px;font-weight:600;font-size:16px;cursor:pointer;transition:.15s;display:flex;justify-content:center;align-items:center;gap:10px}
+.go:hover{background:var(--brand-2)}
+.go:disabled{opacity:.7;cursor:wait}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:none}
+.go.busy .spin{display:block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.main{min-height:300px}
+.empty{padding:48px 28px;text-align:center}
+.empty h2{font-size:22px;margin-bottom:8px}
+.empty p{color:var(--ink-2);max-width:42ch;margin:auto}
+.empty ul{list-style:none;padding:0;margin:22px auto 0;max-width:360px;text-align:left;display:grid;gap:10px}
+.empty li{display:flex;gap:10px;align-items:flex-start;color:var(--ink-2);font-size:15px}
+.empty li i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:12px;font-style:normal;margin-top:1px}
+
+.err{padding:22px;border-color:var(--bad);background:var(--bad-bg)}
+.err h3{color:var(--bad);margin-bottom:4px}
+.err button{margin-top:12px;border:1px solid var(--bad);background:transparent;color:var(--bad);border-radius:8px;padding:7px 14px;cursor:pointer}
+
+.skel{padding:24px;display:grid;gap:12px}
+.skel div{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--line),transparent,var(--line));background-size:200% 100%;animation:sh 1.3s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.skel .t{height:22px;width:40%}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:10px 14px 0}
+.tabs button{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--ink-2);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--brand);border-color:var(--brand)}
+.panel{padding:24px}
+.panel[hidden]{display:none}
+.panel h3{font-size:20px;margin-bottom:12px}
+.topic-title{font-size:13px;color:var(--ink-2);padding:16px 24px 0}
+
+.ur{font-family:'Noto Nastaliq Urdu',Figtree,serif;line-height:2.3}
+.prose{font-size:17px;max-width:68ch;white-space:pre-line}
+.ur .prose{font-size:18px}
+.points{list-style:none;padding:0;display:grid;gap:12px}
+.points li{display:flex;gap:12px;align-items:flex-start;font-size:17px}
+.points li::before{content:"";flex:none;width:8px;height:8px;border-radius:2px;background:var(--brand);margin-top:.7em}
+.points span{background:none;padding:0 2px}
+.ur .points span{background:none}
+
+.prog{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.prog div{height:100%;background:var(--brand);width:0;transition:width .3s}
+.meta{display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;margin-bottom:18px}
+.q{font-size:20px;font-weight:600;margin-bottom:16px;font-family:'Bricolage Grotesque',Figtree,sans-serif}
+.ur .q{font-family:'Noto Nastaliq Urdu',serif;font-weight:600}
+.opts{display:grid;gap:10px}
+.opt{text-align:start;border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:13px 16px;cursor:pointer;font-size:16px;transition:.12s}
+.opt:hover:not(:disabled){border-color:var(--brand)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.why{margin-top:14px;padding:13px 15px;border-radius:12px;background:color-mix(in srgb,var(--brand) 8%,transparent);font-size:15px}
+.next{margin-top:16px;border:0;background:var(--brand);color:#fff;border-radius:10px;padding:10px 22px;font-weight:600;cursor:pointer}
+.score{text-align:center;padding:16px 0}
+.score .n{font-family:'Bricolage Grotesque',sans-serif;font-size:56px;font-weight:700;color:var(--brand)}
+.score p{color:var(--ink-2);margin:6px 0 18px}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:10px;padding:10px 18px;cursor:pointer;margin:0 4px;font-weight:500}
+.ghost:hover{border-color:var(--brand);color:var(--brand)}
+
+.note{margin-top:14px;color:var(--ink-2);font-size:13px;text-align:center}
+@media(min-width:1100px){
+  body{font-size:17px}
+  .top{max-width:1360px;padding:28px 32px 10px}
+  .top h1{font-size:28px}.top p{font-size:15px}
+  .logo{width:48px;height:48px}
+  .wrap{max-width:1360px;padding:16px 32px 56px;grid-template-columns:400px 1fr;gap:32px}
+  .desk{padding:26px;top:24px}
+  .desk h2{font-size:21px}
+  .main{min-height:560px}
+  .res{display:grid;grid-template-columns:1fr 1fr;align-content:start}
+  .res .tabs{display:none}
+  .res .topic-title{grid-column:1/-1;font-size:14px;padding:22px 32px 0}
+  .res .panel{padding:20px 32px 28px}
+  .res .panel[hidden]{display:block}
+  .res .panel[data-p=pts]{border-left:1px solid var(--line)}
+  .res .panel[data-p=quiz]{grid-column:1/-1;border-top:1px solid var(--line);padding:28px 32px 36px}
+  .panel h3{font-size:22px}
+  .prose,.points li{font-size:18px}
+  .q{font-size:22px}
+  .opts{grid-template-columns:1fr 1fr}
+  .opt{padding:16px 18px;font-size:17px}
+  .empty{padding:90px 40px}
+  .empty h2{font-size:30px}
+  .empty p{font-size:18px;max-width:48ch}
+  .empty ul{max-width:440px}.empty li{font-size:17px}
+}
+@media(min-width:1700px){
+  .top,.wrap{max-width:1560px}
+  .wrap{grid-template-columns:440px 1fr}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Let long tutor content expand naturally */
+.top{width:100%}
+.wrap{width:100%;align-items:start}
+.main{min-width:0;min-height:300px}
+.res{min-width:0;overflow-wrap:anywhere}
+.prose{line-height:1.85}
+.points li{line-height:1.8}
+.ur .prose,.ur .points li,.ur .q,.ur .why{line-height:2.15}
+.panel{min-width:0}
+@media(max-width:1099px){
+  .res .panel[hidden]{display:none}
+  .res .tabs{display:flex}
+  .res .panel{padding:22px}
+}
+@media(max-width:860px){
+  .top{padding:18px 16px 8px}
+  .wrap{padding:12px 16px 32px;gap:16px}
+  .desk{position:static}
+  .res .topic-title{padding:18px 20px 0}
+  .res .panel{padding:20px}
+  .ur .prose,.ur .points li{font-size:17px}
+}
+@media(max-width:520px){
+  .row{grid-template-columns:1fr}
+  .top h1{font-size:22px}
+  .empty{padding:32px 18px}
+  .res .panel{padding:16px}
+}
+
+/* Start quiz button + quiz view */
+.startq{margin-top:22px;width:100%;border:0;border-radius:12px;background:var(--brand);color:#fff;padding:13px;font-weight:600;font-size:16px;cursor:pointer;transition:.15s}
+.startq:hover{background:var(--brand-2)}
+.qhead{padding:14px 24px 0}
+.qhead .ghost{margin:0;padding:6px 14px;font-size:14px}
+.res.qm .panel{padding:20px 24px 28px}
+
+/* Laptop: result box = same height as Study desk, scrolls inside itself */
+@media(min-width:1100px){
+  .wrap{align-items:stretch;padding-bottom:24px}
+  .main{position:relative}
+  .res{position:absolute;inset:0;overflow-y:auto;scrollbar-width:thin}
+  .res.qm{display:block}
+  .res.qm .panel{padding:20px 32px 32px}
+  .qhead{padding:16px 32px 0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M8 8h8M8 12h5"/></svg>
+  </div>
+  <div><h1>Smart Tutor</h1><p>Give Textbook page or topic, Learn and give Quiz</p></div>
+</header>
+
+<div class="wrap">
+  <aside class="card desk">
+    <h2>Study desk</h2>
+
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" capture="environment" aria-label="Textbook page photo">
+      <svg width="30" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1.2-2h6.6l1.2 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <b>Take photo or upload</b>
+      <small>Drag and drop</small>
+    </label>
+    <div class="preview" id="preview"><img id="pimg" alt="Selected page"><button type="button" id="rm">Remove</button></div>
+
+    <div class="or">OR</div>
+
+    <label class="f" for="topic" style="margin-top:0">Topic</label>
+    <input class="field" id="topic" placeholder="e.g. Photosynthesis" autocomplete="off">
+
+    <div class="row">
+      <div><label class="f">Language</label>
+        <div class="seg" id="lang"><button type="button" aria-pressed="true" data-v="Urdu">Urdu</button><button type="button" aria-pressed="false" data-v="English">English</button></div>
+      </div>
+      <div><label class="f" for="level">Class</label>
+        <select class="field" id="level"><option>Class 6</option><option>Class 7</option><option selected>Class 8</option><option>Class 9</option><option>Class 10</option></select>
+      </div>
+    </div>
+
+    <button class="go" id="go" type="button"><span class="spin"></span><span id="gotxt">Start studying</span></button>
+    <p class="note">AI can make mistakes. Verify from your Textbook.</p>
+  </aside>
+
+  <main class="main" id="main" aria-live="polite">
+    <div class="card empty">
+      <h2>What to Learn today?</h2>
+      <p>Upload picture or give topic. Tutor will teach you:</p>
+      <ul>
+        <li><i>1</i>Explanation in easy words</li>
+        <li><i>2</i>Key points to remember</li>
+        <li><i>3</i>Quiz of 10 Questions, with explaination of answers</li>
+        <li><i>4</i>You can view your score and start new Quiz</li>
+      </ul>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let file = null, lang = "Urdu", D = null, qi = 0, score = 0, last = {};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- inputs ---------- */
+function setFile(f){
+  if(!f || !f.type.startsWith("image/")) return;
+  file = f;
+  $("#pimg").src = URL.createObjectURL(f);
+  $("#preview").style.display = "block";
+  $("#drop").style.display = "none";
+}
+function clearFile(){
+  file = null; $("#file").value = "";
+  $("#preview").style.display = "none"; $("#drop").style.display = "block";
+}
+$("#file").onchange = e => setFile(e.target.files[0]);
+$("#rm").onclick = clearFile;
+const drop = $("#drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
+document.querySelectorAll("#lang button").forEach(b => b.onclick = () => {
+  lang = b.dataset.v;
+  document.querySelectorAll("#lang button").forEach(x => x.setAttribute("aria-pressed", x === b));
+});
+$("#topic").addEventListener("keydown", e => { if(e.key === "Enter") run(); });
+$("#go").onclick = run;
+
+/* ---------- request ---------- */
+function run(){
+  const topic = $("#topic").value.trim();
+  if(!file && !topic){ showError("Kuch daalo", "Page ki photo upload karo ya topic likho."); return; }
+  last = {topic, f: file};
+  $("#topic").value = "";
+  clearFile();
+  send(last.topic, last.f);
+}
+
+async function send(topic, f){
+  const fd = new FormData();
+  if(f) fd.append("image", f);
+  fd.append("topic", topic); fd.append("lang", lang); fd.append("level", $("#level").value);
+  busy(true);
+  $("#main").innerHTML = `<div class="card skel"><div class="t"></div><div></div><div></div><div style="width:80%"></div><div style="width:60%"></div></div>`;
+  try{
+    const r = await fetch("/study", {method:"POST", body:fd});
+    const j = await r.json();
+    if(!r.ok || j.error) throw new Error(j.error || "Request failed");
+    D = j; D._topic = topic || "Page photo"; D._lang = lang; D._level = $("#level").value;
+    D._seen = (j.quiz || []).map(q => q.q);
+    qi = 0; score = 0;
+    render();
+  }catch(e){
+    showError("Kuch ghalat ho gaya", e.message.length > 160 ? e.message.slice(0,160) + "..." : e.message, true);
+  }finally{ busy(false); }
+}
+
+function busy(b){ $("#go").disabled = b; $("#go").classList.toggle("busy", b); $("#gotxt").textContent = b ? "Tayyar ho raha hai..." : "Start studying"; }
+
+function showError(t, m, retry){
+  $("#main").innerHTML = `<div class="card err"><h3>${esc(t)}</h3><p>${esc(m)}</p>${retry ? '<button id="retry">Dobara try karo</button>' : ""}</div>`;
+  if(retry) $("#retry").onclick = () => send(last.topic, last.f);
+}
+
+/* ---------- results ---------- */
+function render(){
+  const ur = D._lang === "Urdu" ? "ur" : "";
+  $("#main").innerHTML = `
+  <div class="card res ${ur}">
+    <div class="topic-title">${esc(D._topic)} &middot; ${esc(D._level)}</div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-t="exp">Explanation</button>
+      <button role="tab" aria-selected="false" data-t="pts">Key points</button>
+      <button role="tab" aria-selected="false" data-t="quiz">Quiz</button>
+    </div>
+    <section class="panel" data-p="exp"><h3>Explanation</h3><div class="prose" dir="auto">${esc(D.explanation)}</div></section>
+    <section class="panel" data-p="pts" hidden><h3>Key points</h3><ul class="points">${(D.key_points||[]).map(k => `<li dir="auto"><span>${esc(k)}</span></li>`).join("")}</ul><button class="startq" id="sq" type="button">Start quiz</button></section>
+  </div>`;
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+    if(b.dataset.t === "quiz") return startQuiz();
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+    document.querySelectorAll(".panel").forEach(p => p.hidden = p.dataset.p !== b.dataset.t);
+  });
+  $("#sq").onclick = startQuiz;
+}
+
+function startQuiz(){
+  const ur = D._lang === "Urdu" ? "ur" : "";
+  $("#main").innerHTML = `
+  <div class="card res qm ${ur}">
+    <div class="topic-title">${esc(D._topic)} &middot; ${esc(D._level)}</div>
+    <div class="qhead"><button class="ghost" id="back" type="button">Lesson par wapas</button></div>
+    <section class="panel" id="quiz"></section>
+  </div>`;
+  $("#back").onclick = render;
+  qi = 0; score = 0; quiz();
+}
+
+async function newQuiz(){
+  const box = $("#quiz");
+  box.innerHTML = `<div class="skel"><div class="t"></div><div></div><div style="width:70%"></div></div>`;
+  try{
+    const r = await fetch("/quiz", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({explanation: D.explanation, lang: D._lang, level: D._level, prev: D._seen})});
+    const j = await r.json();
+    if(!r.ok || j.error || !j.quiz?.length) throw new Error(j.error || "Quiz nahi bana");
+    D.quiz = j.quiz; D._seen.push(...j.quiz.map(q => q.q));
+    qi = 0; score = 0; quiz();
+  }catch(e){
+    box.innerHTML = `<p>${esc(e.message.slice(0,160))}</p><button class="ghost" id="rq">Dobara try karo</button>`;
+    $("#rq").onclick = newQuiz;
+  }
+}
+
+function quiz(){
+  const Q = D.quiz || [], box = $("#quiz");
+  if(!Q.length){ box.innerHTML = "<p>Is topic ke liye quiz nahi bana.</p>"; return; }
+  if(qi >= Q.length){
+    const pct = Math.round(score / Q.length * 100);
+    box.innerHTML = `<div class="score"><div class="n">${score}/${Q.length}</div>
+      <p>${pct >= 80 ? "Zabardast! Topic achhe se samajh aa gaya." : pct >= 50 ? "Achha hai. Key points ek baar dobara parh lo." : "Explanation dobara parho, phir quiz try karo."}</p>
+      <button class="ghost" id="again">Naya quiz</button><button class="ghost" id="new">Naya topic</button></div>`;
+    $("#again").onclick = newQuiz;
+    $("#new").onclick = () => { window.scrollTo({top:0}); $("#topic").focus(); };
+    return;
+  }
+  const q = Q[qi];
+  box.innerHTML = `<div class="prog"><div style="width:${qi / Q.length * 100}%"></div></div>
+    <div class="meta"><span>Question ${qi + 1} of ${Q.length}</span><span>Score: ${score}</span></div>
+    <div class="q" dir="auto">${esc(q.q)}</div>
+    <div class="opts">${q.options.map((o, j) => `<button class="opt" data-j="${j}" dir="auto">${esc(o)}</button>`).join("")}</div>
+    <div id="fb"></div>`;
+  box.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const j = +b.dataset.j, all = box.querySelectorAll(".opt");
+    all.forEach(x => x.disabled = true);
+    all[q.answer].classList.add("right");
+    if(j === q.answer) score++; else b.classList.add("wrong");
+    $("#fb").innerHTML = `<div class="why" dir="auto"><b>${j === q.answer ? "Sahi jawab." : "Sahi jawab upar green mein hai."}</b> ${esc(q.why)}</div>
+      <button class="next" id="nx">${qi + 1 === Q.length ? "Result dekho" : "Agla sawal"}</button>`;
+    $("#nx").focus();
+    $("#nx").onclick = () => { qi++; quiz(); };
+  });
+}
+</script>
+</body>
+</html>
